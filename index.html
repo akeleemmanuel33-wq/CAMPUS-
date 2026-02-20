@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus — Nigeria's Student PDF Platform</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar"></nav>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- ═══════════════════════════════════════════
+       HERO SECTION
+  ════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-glow hero-glow-1"></div>
+    <div class="hero-glow hero-glow-2"></div>
+
+    <div class="container">
+      <div class="hero-badge">🇳🇬 For Nigerian Students</div>
+
+      <h1 class="hero-title">
+        Every Material.<br />
+        <span class="hero-gradient">Every University.</span>
+      </h1>
+
+      <p class="hero-sub">
+        Share and discover academic PDFs across all Nigerian universities.<br />
+        Past questions, lecture notes — all in one place.
+      </p>
+
+      <!-- CTA BUTTONS — shown only when logged out -->
+      <div id="hero-cta" style="display:none;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:36px;">
+        <a href="signup.html" class="btn btn-primary btn-lg">🎓 Create Free Account</a>
+        <a href="login.html" class="btn btn-outline btn-lg">Log In</a>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="search-bar-wrap">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="search-input"
+            class="search-input"
+            placeholder="Search by title, course code, university..."
+            autocomplete="off"
+          />
+          <button class="btn btn-primary" id="search-btn">Search</button>
+        </div>
+
+        <!-- QUICK SEARCH SUGGESTIONS -->
+        <div class="search-suggestions" id="suggestions"></div>
+      </div>
+
+      <!-- STATS ROW -->
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-icon">📄</span>
+          <span class="hero-stat-num" id="stat-pdfs">—</span>
+          <span class="hero-stat-label">PDFs Shared</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-icon">🏫</span>
+          <span class="hero-stat-num" id="stat-unis">—</span>
+          <span class="hero-stat-label">Universities</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-icon">⬇️</span>
+          <span class="hero-stat-num" id="stat-downloads">—</span>
+          <span class="hero-stat-label">Downloads</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FILTERS + PDF GRID
+  ════════════════════════════════════════════ -->
+  <section class="browse-section">
+    <div class="container">
+
+      <!-- FILTER ROW -->
+      <div class="filter-row">
+
+        <!-- Type filter -->
+        <div class="chip-group" id="type-filters">
+          <button class="chip active" data-type="All">All</button>
+          <button class="chip" data-type="Material">📚 Material</button>
+          <button class="chip" data-type="Past Question">📝 Past Question</button>
+        </div>
+
+        <div class="filter-divider"></div>
+
+        <!-- University type filter -->
+        <div class="chip-group" id="uni-filters">
+          <button class="chip active" data-uni="All">All Schools</button>
+          <button class="chip" data-uni="Federal">Federal</button>
+          <button class="chip" data-uni="State">State</button>
+          <button class="chip" data-uni="Private">Private</button>
+        </div>
+
+        <!-- Sort -->
+        <div class="sort-wrap">
+          <span class="sort-label">Sort:</span>
+          <button class="chip active" id="sort-recent" data-sort="recent">Recent</button>
+          <button class="chip" id="sort-popular" data-sort="popular">Popular</button>
+        </div>
+
+      </div>
+
+      <!-- CATEGORY CHIPS -->
+      <div class="category-row" id="category-row">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- RESULTS META -->
+      <div class="results-meta">
+        <p id="results-count" class="results-count"></p>
+        <div id="view-hint" class="view-hint" style="display:none;"></div>
+      </div>
+
+      <!-- PDF GRID -->
+      <div class="pdf-grid" id="pdf-grid">
+        <!-- Skeleton loaders shown while fetching -->
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
+      <!-- LOAD MORE -->
+      <div style="text-align:center;margin-top:40px;">
+        <button class="btn btn-ghost" id="load-more-btn" style="display:none;">
+          Load More PDFs
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer"></footer>
+
+  <script type="module">
+    import { supabase }                          from './js/supabase.js'
+    import { buildNav, buildFooter, toast,
+             formatDate, formatSize,
+             uniBadgeClass }                     from './js/ui.js'
+    import { getSession, hasViewedEnough }       from './js/auth.js'
+
+    // ── State ──────────────────────────────────
+    let session       = null
+    let profile       = null
+    let allPdfs       = []
+    let filtered      = []
+    let activeType    = 'All'
+    let activeUni     = 'All'
+    let activeCategory= 'All'
+    let activeSort    = 'recent'
+    let searchQuery   = ''
+    let page          = 0
+    const PAGE_SIZE   = 12
+    let canDownload   = false
+
+    const CATEGORIES = [
+      'All','Physics','Mathematics','Chemistry','Biology',
+      'Computer Science','Law','Medicine','Economics',
+      'Accounting','English','Engineering','Psychology','Other'
+    ]
+
+    // ── Init ───────────────────────────────────
+    async function init() {
+      session = await getSession()
+      await buildNav('home')
+      buildFooter()
+      buildCategoryChips()
+
+      if (session) {
+        canDownload = await hasViewedEnough(session.user.id)
+        document.getElementById('view-hint').style.display = 'flex'
+        updateViewHint()
+      } else {
+        // Show login/signup CTA in hero for logged-out users
+        document.getElementById('hero-cta').style.display = 'flex'
+      }
+
+      await loadStats()
+      await loadPdfs()
+      bindFilters()
+      bindSearch()
+    }
+
+    // ── Stats ──────────────────────────────────
+    async function loadStats() {
+      const [{ count: pdfCount }, { count: uniCount }, { data: dlData }] = await Promise.all([
+        supabase.from('pdfs').select('*', { count: 'exact', head: true }).eq('is_approved', true),
+        supabase.from('universities').select('*', { count: 'exact', head: true }),
+        supabase.from('pdfs').select('download_count').eq('is_approved', true)
+      ])
+
+      const totalDownloads = dlData?.reduce((sum, r) => sum + (r.download_count || 0), 0) || 0
+
+      animateCount('stat-pdfs',      pdfCount       || 0)
+      animateCount('stat-unis',      uniCount       || 0)
+      animateCount('stat-downloads', totalDownloads    )
+    }
+
+    function animateCount(id, target) {
+      const el = document.getElementById(id)
+      if (!el) return
+      let current = 0
+      const step = Math.ceil(target / 40)
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target)
+        el.textContent = current.toLocaleString()
+        if (current >= target) clearInterval(timer)
+      }, 30)
+    }
+
+    // ── Load PDFs from Supabase ────────────────
+    async function loadPdfs(append = false) {
+      if (!append) {
+        page = 0
+        showSkeletons()
+      }
+
+      let query = supabase
+        .from('pdfs')
+        .select(`
+          id, title, type, file_url, file_size_mb,
+          download_count, created_at,
+          profiles ( full_name ),
+          universities ( name, short_name, type )
+        `)
+        .eq('is_approved', true)
+
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`)
+      }
+      if (activeType !== 'All') {
+        query = query.eq('type', activeType)
+      }
+      if (activeUni !== 'All') {
+        query = query.eq('universities.type', activeUni)
+      }
+
+      if (activeSort === 'popular') {
+        query = query.order('download_count', { ascending: false })
+      } else {
+        query = query.order('created_at', { ascending: false })
+      }
+
+      query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+      const { data, error } = await query
+
+      if (error) {
+        toast('Failed to load PDFs. Please refresh.', 'error')
+        clearSkeletons()
+        return
+      }
+
+      // Client-side category + uni-type filter
+      let results = data || []
+
+      if (activeUni !== 'All') {
+        results = results.filter(p => p.universities?.type === activeUni)
+      }
+      if (activeCategory !== 'All') {
+        results = results.filter(p => {
+          const title = p.title.toLowerCase()
+          return title.includes(activeCategory.toLowerCase())
+        })
+      }
+
+      if (!append) {
+        allPdfs  = results
+        filtered = results
+      } else {
+        allPdfs  = [...allPdfs, ...results]
+        filtered = allPdfs
+      }
+
+      renderGrid(append)
+      updateResultsMeta()
+
+      const loadMoreBtn = document.getElementById('load-more-btn')
+      loadMoreBtn.style.display = results.length === PAGE_SIZE ? 'inline-flex' : 'none'
+    }
+
+    // ── Render Grid ────────────────────────────
+    function renderGrid(append = false) {
+      const grid = document.getElementById('pdf-grid')
+
+      if (!append) grid.innerHTML = ''
+
+      if (!append && filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">📭</div>
+            <h3>No PDFs found</h3>
+            <p>Try a different search term or adjust the filters</p>
+          </div>`
+        return
+      }
+
+      filtered.forEach(pdf => {
+        const card = document.createElement('div')
+        card.className = 'card card-hover pdf-card'
+        card.innerHTML = buildPdfCard(pdf)
+        card.querySelector('.view-btn').addEventListener('click', () => handleView(pdf))
+        card.querySelector('.dl-btn').addEventListener('click', () => handleDownload(pdf))
+        grid.appendChild(card)
+      })
+    }
+
+    function buildPdfCard(pdf) {
+      const uniType  = pdf.universities?.type || 'Federal'
+      const uniName  = pdf.universities ? `${pdf.universities.name} (${pdf.universities.short_name})` : '—'
+      const uploader = pdf.profiles?.full_name || 'Anonymous'
+      const dlBtnStyle = canDownload
+        ? 'background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;border:none;'
+        : 'background:rgba(255,255,255,0.05);color:var(--text-dim);border:1px solid var(--border);'
+
+      return `
+        <div class="pdf-card-meta">
+          <span class="badge ${pdf.type === 'Material' ? 'badge-material' : 'badge-past'}">
+            ${pdf.type === 'Material' ? '📚' : '📝'} ${pdf.type}
+          </span>
+          <span class="badge ${uniBadgeClass(uniType)}">${uniType}</span>
+        </div>
+        <h3 class="pdf-card-title">${pdf.title}</h3>
+        <p class="pdf-card-uni">🏫 ${uniName}</p>
+        <p class="pdf-card-info">👤 ${uploader} &nbsp;·&nbsp; 📅 ${formatDate(pdf.created_at)}</p>
+        <div class="pdf-card-footer">
+          <span class="pdf-card-stats">⬇️ ${pdf.download_count || 0} &nbsp;·&nbsp; 📁 ${formatSize(pdf.file_size_mb)}</span>
+          <button class="btn btn-sm view-btn" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);">View</button>
+          <button class="btn btn-sm dl-btn" style="${dlBtnStyle}padding:7px 14px;">⬇️</button>
+        </div>
+      `
+    }
+
+    // ── View PDF ───────────────────────────────
+    async function handleView(pdf) {
+      if (!session) {
+        toast('Please log in to view PDFs', 'warning')
+        setTimeout(() => window.location.href = 'login.html?next=index.html', 1000)
+        return
+      }
+
+      // Log the view
+      await supabase.from('download_logs').insert({
+        user_id: session.user.id,
+        pdf_id:  pdf.id,
+        action:  'view'
+      })
+
+      // Update profile viewed count
+      await supabase.rpc('increment_views', { uid: session.user.id })
+
+      // Navigate to view page
+      window.location.href = `view.html?id=${pdf.id}`
+    }
+
+    // ── Download PDF ───────────────────────────
+    async function handleDownload(pdf) {
+      if (!session) {
+        toast('Please log in to download PDFs', 'warning')
+        setTimeout(() => window.location.href = 'login.html?next=index.html', 1000)
+        return
+      }
+
+      if (!canDownload) {
+        const { count } = await supabase
+          .from('download_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id)
+          .eq('action', 'view')
+
+        const remaining = 10 - (count || 0)
+        toast(`View ${remaining} more PDF${remaining !== 1 ? 's' : ''} to unlock downloads 👀`, 'warning')
+        return
+      }
+
+      // Log download
+      await supabase.from('download_logs').insert({
+        user_id: session.user.id,
+        pdf_id:  pdf.id,
+        action:  'download'
+      })
+
+      // Increment download counter
+      await supabase
+        .from('pdfs')
+        .update({ download_count: (pdf.download_count || 0) + 1 })
+        .eq('id', pdf.id)
+
+      // Trigger download
+      const { data } = supabase.storage.from('pdfs').getPublicUrl(pdf.file_url)
+      const a = document.createElement('a')
+      a.href = data.publicUrl
+      a.download = pdf.title + '.pdf'
+      a.click()
+
+      toast(`Downloading "${pdf.title}" 📥`)
+
+      // Update local count
+      pdf.download_count = (pdf.download_count || 0) + 1
+    }
+
+    // ── View Hint ──────────────────────────────
+    function updateViewHint() {
+      const hint = document.getElementById('view-hint')
+      if (!hint) return
+      if (canDownload) {
+        hint.innerHTML = `✅ Downloads unlocked!`
+        hint.className = 'view-hint unlocked'
+      } else {
+        hint.innerHTML = `👀 View 10 PDFs to unlock downloads`
+        hint.className = 'view-hint locked'
+      }
+    }
+
+    // ── Results Meta ───────────────────────────
+    function updateResultsMeta() {
+      const el = document.getElementById('results-count')
+      if (el) el.innerHTML = `<span style="color:var(--green);font-weight:700;">${filtered.length}</span> PDFs found`
+    }
+
+    // ── Category Chips ─────────────────────────
+    function buildCategoryChips() {
+      const row = document.getElementById('category-row')
+      CATEGORIES.forEach(cat => {
+        const btn = document.createElement('button')
+        btn.className = `chip ${cat === 'All' ? 'active' : ''}`
+        btn.textContent = cat
+        btn.dataset.cat = cat
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#category-row .chip').forEach(c => c.classList.remove('active'))
+          btn.classList.add('active')
+          activeCategory = cat
+          loadPdfs()
+        })
+        row.appendChild(btn)
+      })
+    }
+
+    // ── Bind Filters ───────────────────────────
+    function bindFilters() {
+      // Type filter
+      document.querySelectorAll('#type-filters .chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#type-filters .chip').forEach(b => b.classList.remove('active'))
+          btn.classList.add('active')
+          activeType = btn.dataset.type
+          loadPdfs()
+        })
+      })
+
+      // Uni type filter
+      document.querySelectorAll('#uni-filters .chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#uni-filters .chip').forEach(b => b.classList.remove('active'))
+          btn.classList.add('active')
+          activeUni = btn.dataset.uni
+          loadPdfs()
+        })
+      })
+
+      // Sort
+      document.getElementById('sort-recent').addEventListener('click', () => {
+        document.querySelectorAll('.sort-wrap .chip').forEach(b => b.classList.remove('active'))
+        document.getElementById('sort-recent').classList.add('active')
+        activeSort = 'recent'
+        loadPdfs()
+      })
+      document.getElementById('sort-popular').addEventListener('click', () => {
+        document.querySelectorAll('.sort-wrap .chip').forEach(b => b.classList.remove('active'))
+        document.getElementById('sort-popular').classList.add('active')
+        activeSort = 'popular'
+        loadPdfs()
+      })
+
+      // Load more
+      document.getElementById('load-more-btn').addEventListener('click', () => {
+        page++
+        loadPdfs(true)
+      })
+    }
+
+    // ── Search ─────────────────────────────────
+    function bindSearch() {
+      const input = document.getElementById('search-input')
+      const btn   = document.getElementById('search-btn')
+      let debounceTimer
+
+      input.addEventListener('input', () => {
+        clearTimeout(debounceTimer)
+        debounceTimer = setTimeout(() => {
+          searchQuery = input.value.trim()
+          loadPdfs()
+        }, 400)
+      })
+
+      btn.addEventListener('click', () => {
+        searchQuery = input.value.trim()
+        loadPdfs()
+      })
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          searchQuery = input.value.trim()
+          loadPdfs()
+        }
+      })
+    }
+
+    // ── Skeletons ──────────────────────────────
+    function showSkeletons() {
+      const grid = document.getElementById('pdf-grid')
+      grid.innerHTML = Array(6).fill('<div class="skeleton-card"></div>').join('')
+    }
+
+    function clearSkeletons() {
+      const grid = document.getElementById('pdf-grid')
+      grid.innerHTML = ''
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
