@@ -1,0 +1,239 @@
+/* =============================================
+   CAMPUS - Upload Page CSS
+   ============================================= */
+
+/* ─── Page Header ────────────────────────────── */
+.page-header { margin-bottom: 28px; }
+.page-title  { font-size: 28px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
+.page-sub    { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+
+/* ─── Gate Box ───────────────────────────────── */
+.gate-box   { text-align: center; padding: 36px 24px; border-radius: 16px; }
+.gate-icon  { font-size: 44px; margin-bottom: 14px; }
+.gate-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; color: var(--text); }
+.gate-desc  { font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
+.gate-progress { text-align: left; }
+
+/* ─── Usage Card ─────────────────────────────── */
+.usage-card { padding: 16px 20px; margin-bottom: 20px; }
+.usage-row  {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+.usage-label { font-size: 14px; font-weight: 700; color: var(--text); }
+.usage-sub   { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.usage-count {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Upload Form Card ───────────────────────── */
+.upload-form {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ─── Input Group ────────────────────────────── */
+.input-group { display: flex; flex-direction: column; gap: 6px; }
+.input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ─── Char Count ─────────────────────────────── */
+.char-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Optional Tag ───────────────────────────── */
+.optional-tag {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.07);
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Field Error ────────────────────────────── */
+.field-error {
+  font-size: 12px;
+  color: var(--red);
+  display: block;
+  min-height: 16px;
+  margin-top: 2px;
+}
+
+/* ─── Type Toggle ────────────────────────────── */
+.type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  width: 100%;
+}
+.type-btn:hover {
+  border-color: var(--green-border);
+  background: var(--green-dim);
+}
+.type-btn.active {
+  border-color: var(--green);
+  background: var(--green-dim);
+}
+
+.type-icon { font-size: 24px; line-height: 1; }
+
+.type-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.type-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  line-height: 1.3;
+}
+.type-btn.active .type-name { color: var(--green); }
+.type-btn.active .type-desc { color: rgba(29,185,84,0.6); }
+
+/* ─── Drop Zone ──────────────────────────────── */
+.drop-zone {
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 14px;
+  padding: 28px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.02);
+  text-align: center;
+}
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: var(--green);
+  background: var(--green-dim);
+}
+
+.drop-idle   { text-align: center; }
+.drop-icon   { font-size: 32px; margin-bottom: 10px; display: block; }
+.drop-title  { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.drop-sub    { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.drop-hint   { font-size: 11px; color: var(--text-dim); }
+
+.browse-link {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 13px;
+  font-family: var(--font);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+}
+
+/* ─── File Preview ───────────────────────────── */
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(29,185,84,0.06);
+  border: 1px solid rgba(29,185,84,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.file-icon { font-size: 26px; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; }
+.file-name {
+  font-size: 13px; font-weight: 600; color: var(--green);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file-size { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.remove-file {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-family: var(--font);
+}
+.remove-file:hover { background: rgba(239,68,68,0.2); }
+
+/* ─── Upload Terms ───────────────────────────── */
+.upload-terms {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.6;
+  margin-top: -4px;
+  padding: 0 8px;
+}
+
+/* ─── Button Spinner ─────────────────────────── */
+.btn-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Responsive ─────────────────────────────── */
+@media (max-width: 480px) {
+  .upload-form  { padding: 18px 16px; gap: 18px; }
+  .page-title   { font-size: 24px; }
+
+  /* Type toggle always side by side */
+  .type-toggle  { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .type-btn     { padding: 14px 8px; }
+  .type-icon    { font-size: 20px; }
+  .type-name    { font-size: 12px; }
+  .type-desc    { display: none; } /* hide desc on very small screens */
+
+  /* Drop zone tighter */
+  .drop-zone    { padding: 20px 12px; }
+  .drop-title   { font-size: 13px; }
+}
