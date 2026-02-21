@@ -1,0 +1,27 @@
+campus/
+│
+├── index.html          → Home / Search / Browse PDFs
+├── login.html          → Login page
+├── signup.html         → Sign up page
+├── upload.html         → Upload PDF page
+├── view.html           → View single PDF + similar PDFs
+├── profile.html        → User profile + stats
+│
+
+├── css/
+│   ├── main.css        → Global styles, variables, navbar, footer
+│   ├── auth.css        → Login & signup styles
+│   ├── upload.css      → Upload form styles
+│   └── view.css        → PDF view page styles
+│
+
+├── js/
+│   ├── supabase.js     → Supabase client init (your keys live here)
+│   ├── auth.js         → Login, signup, logout, session check
+│   ├── upload.js       → PDF upload logic + validation
+│   ├── browse.js       → Search, filter, load PDFs on homepage
+│   ├── view.js         → Single PDF page logic + download counter
+│   └── profile.js      → Profile page data + stats
+│
+└── assets/
+    └── logo.svg        → Campus logo

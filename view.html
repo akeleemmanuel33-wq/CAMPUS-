@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View PDF — Campus</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/view.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar"></nav>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- PAGE -->
+  <main class="page">
+    <div class="container-sm">
+
+      <!-- BACK BUTTON -->
+      <a href="index.html" class="back-btn">← Back to Explore</a>
+
+      <!-- LOADING STATE -->
+      <div id="loading-wrap" class="loading-wrap">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- ERROR STATE -->
+      <div id="error-wrap" style="display:none;">
+        <div class="empty-state">
+          <div class="empty-icon">😕</div>
+          <h3>PDF not found</h3>
+          <p>This PDF may have been removed or the link is broken</p>
+          <a href="index.html" class="btn btn-primary" style="margin-top:20px;">Go back home</a>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT — hidden until loaded -->
+      <div id="pdf-content" style="display:none;">
+
+        <!-- ── PDF HEADER ── -->
+        <div class="card pdf-header">
+
+          <!-- Badges row -->
+          <div class="pdf-header-badges" id="pdf-badges"></div>
+
+          <!-- Title -->
+          <h1 class="pdf-title" id="pdf-title"></h1>
+
+          <!-- Meta grid -->
+          <div class="pdf-meta-grid">
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">Uploaded by</span>
+              <span class="pdf-meta-value" id="pdf-uploader"></span>
+            </div>
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">University</span>
+              <span class="pdf-meta-value" id="pdf-university"></span>
+            </div>
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">File Size</span>
+              <span class="pdf-meta-value" id="pdf-size"></span>
+            </div>
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">Uploaded</span>
+              <span class="pdf-meta-value" id="pdf-date"></span>
+            </div>
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">Downloads</span>
+              <span class="pdf-meta-value" id="pdf-downloads"></span>
+            </div>
+            <div class="pdf-meta-item">
+              <span class="pdf-meta-label">Type</span>
+              <span class="pdf-meta-value" id="pdf-type"></span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- VIEW PROGRESS (shown when downloads locked) -->
+          <div id="view-progress-wrap" style="display:none;">
+            <div class="view-progress-box alert alert-warning">
+              <div class="view-progress-top">
+                <span id="view-progress-msg"></span>
+                <span class="view-progress-count" id="view-progress-count"></span>
+              </div>
+              <div class="progress-wrap" style="margin-top:10px;">
+                <div class="progress-fill warning" id="view-progress-bar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOWNLOAD BUTTON -->
+          <button class="btn btn-primary btn-full btn-lg" id="download-btn" disabled>
+            ⏳ Loading...
+          </button>
+
+          <!-- Share row -->
+          <div class="share-row">
+            <span class="share-label">Share:</span>
+            <button class="btn btn-ghost btn-sm" id="copy-link-btn">🔗 Copy Link</button>
+            <button class="btn btn-ghost btn-sm" id="share-wa-btn">💬 WhatsApp</button>
+          </div>
+
+        </div>
+
+        <!-- ── PDF PREVIEW ── -->
+        <div class="card pdf-preview-card">
+          <h2 class="section-title" style="padding:24px 24px 0;">Preview</h2>
+          <div class="pdf-preview-wrap" id="pdf-preview-wrap">
+            <!-- Real PDF embed via iframe -->
+            <div id="pdf-embed-wrap" style="display:none;">
+              <iframe
+                id="pdf-iframe"
+                class="pdf-preview-iframe"
+                title="PDF Preview"
+              ></iframe>
+            </div>
+            <!-- Fallback if iframe blocked -->
+            <div id="pdf-embed-fallback" class="pdf-preview-placeholder" style="display:none;">
+              <div style="font-size:48px;margin-bottom:12px;">📄</div>
+              <p style="font-weight:600;font-size:15px;" id="preview-title-text"></p>
+              <p style="color:var(--text-dim);font-size:13px;margin-top:8px;">
+                Preview not available in browser.<br/>Download to view the full PDF.
+              </p>
+            </div>
+            <!-- Loading state -->
+            <div id="pdf-embed-loading" style="text-align:center;padding:40px 0;">
+              <div class="spinner"></div>
+              <p style="color:var(--text-muted);font-size:13px;margin-top:12px;">Loading preview...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SIMILAR PDFs ── -->
+        <div id="similar-section" style="display:none;">
+          <h2 class="section-title" style="margin-top:48px;">Similar PDFs</h2>
+          <p class="section-sub">From the same university or subject area</p>
+          <div class="pdf-grid" id="similar-grid"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer"></footer>
+
+  <script type="module">
+    import { supabase }                    from './js/supabase.js'
+    import { buildNav, buildFooter, toast,
+             formatDate, formatSize,
+             uniBadgeClass }               from './js/ui.js'
+    import { getSession, hasViewedEnough } from './js/auth.js'
+
+    // ── State ───────────────────────────────────
+    let session    = null
+    let pdf        = null
+    let canDownload = false
+    let viewCount   = 0
+
+    // ── Init ────────────────────────────────────
+    async function init() {
+      session = await getSession()
+      await buildNav('')
+      buildFooter()
+
+      // Get PDF id from URL ?id=xxxx
+      const params = new URLSearchParams(window.location.search)
+      const pdfId  = params.get('id')
+
+      if (!pdfId) {
+        showError()
+        return
+      }
+
+      await loadPdf(pdfId)
+    }
+
+    // ── Load PDF ────────────────────────────────
+    async function loadPdf(pdfId) {
+      const { data, error } = await supabase
+        .from('pdfs')
+        .select(`
+          id, title, type, file_url, file_size_mb,
+          download_count, created_at, is_approved,
+          profiles ( id, full_name ),
+          universities ( id, name, short_name, type )
+        `)
+        .eq('id', pdfId)
+        .eq('is_approved', true)
+        .single()
+
+      if (error || !data) {
+        showError()
+        return
+      }
+
+      pdf = data
+      document.title = `${pdf.title} — Campus`
+
+      // Log the view if logged in
+      if (session) {
+        await logView()
+        await checkDownloadAccess()
+      }
+
+      renderPdf()
+      await loadSimilar()
+    }
+
+    // ── Log View ────────────────────────────────
+    async function logView() {
+      // Avoid duplicate view logs for same session
+      const key = `viewed_${pdf.id}`
+      if (sessionStorage.getItem(key)) return
+      sessionStorage.setItem(key, '1')
+
+      await supabase.from('download_logs').insert({
+        user_id: session.user.id,
+        pdf_id:  pdf.id,
+        action:  'view'
+      })
+
+      // Increment profile views counter
+      await supabase.rpc('increment_views', { uid: session.user.id })
+    }
+
+    // ── Check download access ────────────────────
+    async function checkDownloadAccess() {
+      const { count } = await supabase
+        .from('download_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('action', 'view')
+
+      viewCount   = count || 0
+      canDownload = viewCount >= 5
+    }
+
+    // ── Render PDF page ─────────────────────────
+    function renderPdf() {
+      // Hide loader, show content
+      document.getElementById('loading-wrap').style.display = 'none'
+      document.getElementById('pdf-content').style.display  = 'block'
+
+      const uni     = pdf.universities
+      const uniName = uni ? `${uni.name} (${uni.short_name})` : '—'
+      const uniType = uni?.type || 'Federal'
+
+      // Badges
+      document.getElementById('pdf-badges').innerHTML = `
+        <span class="badge ${pdf.type === 'Material' ? 'badge-material' : 'badge-past'}">
+          ${pdf.type === 'Material' ? '📚' : '📝'} ${pdf.type}
+        </span>
+        <span class="badge ${uniBadgeClass(uniType)}">${uniType}</span>
+      `
+
+      // Text fields
+      document.getElementById('pdf-title').textContent      = pdf.title
+      document.getElementById('pdf-uploader').textContent   = pdf.profiles?.full_name || 'Anonymous'
+      document.getElementById('pdf-university').textContent = uniName
+      document.getElementById('pdf-size').textContent       = formatSize(pdf.file_size_mb)
+      document.getElementById('pdf-date').textContent       = formatDate(pdf.created_at)
+      document.getElementById('pdf-downloads').textContent  = `${pdf.download_count || 0} downloads`
+      document.getElementById('pdf-type').textContent       = pdf.type
+      document.getElementById('preview-title-text').textContent = pdf.title
+
+      // Download button state
+      renderDownloadBtn()
+
+      // Share buttons
+      bindShareButtons()
+
+      // Load PDF preview
+      loadPreview()
+    }
+
+    // ── Render Download Button ───────────────────
+    function renderDownloadBtn() {
+      const btn = document.getElementById('download-btn')
+      const progressWrap = document.getElementById('view-progress-wrap')
+
+      if (!session) {
+        btn.disabled     = false
+        btn.textContent  = '🔒 Log in to Download'
+        btn.onclick      = () => window.location.href = `login.html?next=view.html%3Fid%3D${pdf.id}`
+        return
+      }
+
+      if (!canDownload) {
+        const remaining = 5 - viewCount
+        btn.disabled    = true
+        btn.innerHTML   = `🔒 View ${remaining} more PDF${remaining !== 1 ? 's' : ''} to unlock`
+
+        // Show progress bar
+        progressWrap.style.display = 'block'
+        document.getElementById('view-progress-msg').textContent =
+          `You need to view 5 PDFs before downloading. Keep exploring!`
+        document.getElementById('view-progress-count').textContent =
+          `${viewCount} / 5`
+        document.getElementById('view-progress-bar').style.width =
+          `${(viewCount / 5) * 100}%`
+        return
+      }
+
+      // Fully unlocked
+      progressWrap.style.display = 'none'
+      btn.disabled   = false
+      btn.innerHTML  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M2.99969 17.0002C2.99969 17.9302 2.99969 18.3952 3.10192 18.7767C3.37932 19.8119 4.18796 20.6206 5.22324 20.898C5.60474 21.0002 6.06972 21.0002 6.99969 21.0002L16.9997 21.0002C17.9297 21.0002 18.3947 21.0002 18.7762 20.898C19.8114 20.6206 20.6201 19.8119 20.8975 18.7767C20.9997 18.3952 20.9997 17.9302 20.9997 17.0002" /> <path d="M16.4998 11.5002C16.4998 11.5002 13.1856 16.0002 11.9997 16.0002C10.8139 16.0002 7.49976 11.5002 7.49976 11.5002M11.9997 15.0002V3.00016" /> </svg> Download PDF'
+      btn.onclick    = handleDownload
+    }
+
+    // ── Handle Download ──────────────────────────
+    async function handleDownload() {
+      const btn = document.getElementById('download-btn')
+      btn.disabled  = true
+      btn.innerHTML = '⏳ Preparing download...'
+
+      // Log download
+      await supabase.from('download_logs').insert({
+        user_id: session.user.id,
+        pdf_id:  pdf.id,
+        action:  'download'
+      })
+
+      // Increment counter via RPC
+      await supabase.rpc('increment_download', { pid: pdf.id })
+
+      // Get public URL and trigger download
+      const { data } = supabase.storage.from('pdfs').getPublicUrl(pdf.file_url)
+
+      const a      = document.createElement('a')
+      a.href       = data.publicUrl
+      a.download   = pdf.title + '.pdf'
+      a.target     = '_blank'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+      toast(`Downloading "${pdf.title}" 📥`, 'success')
+
+      // Update download count display
+      pdf.download_count = (pdf.download_count || 0) + 1
+      document.getElementById('pdf-downloads').textContent = `${pdf.download_count} downloads`
+
+      btn.disabled  = false
+      btn.innerHTML = 'Download PDF'
+    }
+
+    // ── Share Buttons ────────────────────────────
+    function bindShareButtons() {
+      const url = window.location.href
+
+      document.getElementById('copy-link-btn').addEventListener('click', () => {
+        navigator.clipboard.writeText(url).then(() => {
+          toast('Link copied to clipboard! 🔗', 'success')
+        })
+      })
+
+      document.getElementById('share-wa-btn').addEventListener('click', () => {
+        const text = `Check out this PDF on Campus: ${pdf.title}\n${url}`
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+      })
+    }
+
+    // ── Load Similar PDFs ────────────────────────
+    async function loadSimilar() {
+      if (!pdf.universities?.id) return
+
+      const { data } = await supabase
+        .from('pdfs')
+        .select(`
+          id, title, type, file_size_mb,
+          download_count, created_at,
+          profiles ( full_name ),
+          universities ( name, short_name, type )
+        `)
+        .eq('is_approved', true)
+        .eq('universities.id', pdf.universities.id)
+        .neq('id', pdf.id)
+        .limit(4)
+
+      if (!data || data.length === 0) return
+
+      const section = document.getElementById('similar-section')
+      const grid    = document.getElementById('similar-grid')
+      section.style.display = 'block'
+
+      data.forEach(p => {
+        const uniType  = p.universities?.type || 'Federal'
+        const uniName  = p.universities ? `${p.universities.name} (${p.universities.short_name})` : '—'
+
+        const card = document.createElement('div')
+        card.className = 'card card-hover pdf-card'
+        card.style.cursor = 'pointer'
+        card.innerHTML = `
+          <div class="pdf-card-meta">
+            <span class="badge ${p.type === 'Material' ? 'badge-material' : 'badge-past'}">
+              ${p.type === 'Material' ? '📚' : '📝'} ${p.type}
+            </span>
+            <span class="badge ${uniBadgeClass(uniType)}">${uniType}</span>
+          </div>
+          <h3 class="pdf-card-title">${p.title}</h3>
+          <p class="pdf-card-uni">🏫 ${uniName}</p>
+          <p class="pdf-card-info">👤 ${p.profiles?.full_name || 'Anonymous'} · 📅 ${formatDate(p.created_at)}</p>
+          <div class="pdf-card-footer">
+            <span class="pdf-card-stats"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M2.99969 17.0002C2.99969 17.9302 2.99969 18.3952 3.10192 18.7767C3.37932 19.8119 4.18796 20.6206 5.22324 20.898C5.60474 21.0002 6.06972 21.0002 6.99969 21.0002L16.9997 21.0002C17.9297 21.0002 18.3947 21.0002 18.7762 20.898C19.8114 20.6206 20.6201 19.8119 20.8975 18.7767C20.9997 18.3952 20.9997 17.9302 20.9997 17.0002" /> <path d="M16.4998 11.5002C16.4998 11.5002 13.1856 16.0002 11.9997 16.0002C10.8139 16.0002 7.49976 11.5002 7.49976 11.5002M11.9997 15.0002V3.00016" /> </svg> ${p.download_count || 0} · 📁 ${formatSize(p.file_size_mb)}</span>
+            <span class="btn btn-sm" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);">View →</span>
+          </div>
+        `
+        card.addEventListener('click', () => {
+          window.location.href = `view.html?id=${p.id}`
+        })
+        grid.appendChild(card)
+      })
+    }
+
+    // ── Load PDF Preview ────────────────────────
+    function loadPreview() {
+      const loadingEl  = document.getElementById('pdf-embed-loading')
+      const wrapEl     = document.getElementById('pdf-embed-wrap')
+      const fallbackEl = document.getElementById('pdf-embed-fallback')
+      const iframe     = document.getElementById('pdf-iframe')
+      const titleEl    = document.getElementById('preview-title-text')
+
+      if (titleEl) titleEl.textContent = pdf.title
+
+      // Get the public URL of the PDF
+      const { data } = supabase.storage.from('pdfs').getPublicUrl(pdf.file_url)
+      const pdfUrl   = data.publicUrl
+
+      // Try to embed it
+      // Use Google Docs viewer as fallback for mobile compatibility
+      const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(pdfUrl)}&embedded=true`
+
+      iframe.src = embedUrl
+
+      iframe.onload = () => {
+        loadingEl.style.display  = 'none'
+        wrapEl.style.display     = 'block'
+      }
+
+      iframe.onerror = () => {
+        loadingEl.style.display   = 'none'
+        fallbackEl.style.display  = 'block'
+      }
+
+      // Timeout fallback — if iframe takes too long
+      setTimeout(() => {
+        if (loadingEl.style.display !== 'none') {
+          loadingEl.style.display  = 'none'
+          wrapEl.style.display     = 'block'
+        }
+      }, 8000)
+    }
+
+    // ── Error State ──────────────────────────────
+    function showError() {
+      document.getElementById('loading-wrap').style.display = 'none'
+      document.getElementById('error-wrap').style.display  = 'block'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>

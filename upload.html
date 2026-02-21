@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload PDF — Campus</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/upload.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar"></nav>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- PAGE -->
+  <main class="page">
+    <div class="container-sm">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <h1 class="page-title">Upload PDF</h1>
+        <p class="page-sub">Share your materials with thousands of Nigerian students</p>
+      </div>
+
+      <!-- ── ACCESS GATE (shown if under 10 views) ── -->
+      <div id="access-gate" style="display:none;">
+        <div class="alert alert-warning gate-box">
+          <div class="gate-icon">🔒</div>
+          <h3 class="gate-title">Unlock Uploads</h3>
+          <p class="gate-desc">
+            You need to view at least <strong>5 PDFs</strong> before you can upload.
+            This keeps Campus spam-free and ensures everyone contributes fairly.
+          </p>
+          <div class="gate-progress">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+              <span>PDFs Viewed</span>
+              <span id="gate-count" style="font-weight:700;color:var(--orange);">0 / 5</span>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-fill warning" id="gate-bar" style="width:0%"></div>
+            </div>
+          </div>
+          <a href="index.html" class="btn btn-primary" style="margin-top:20px;width:100%;justify-content:center;">
+            📚 Go Explore PDFs
+          </a>
+        </div>
+      </div>
+
+      <!-- ── LIMIT REACHED (shown if 10 uploads used) ── -->
+      <div id="limit-gate" style="display:none;">
+        <div class="alert alert-error gate-box">
+          <div class="gate-icon">📵</div>
+          <h3 class="gate-title">Monthly Limit Reached</h3>
+          <p class="gate-desc">
+            You've used all <strong>10 uploads</strong> for this month.
+            Your limit resets on the 1st of next month.
+          </p>
+          <a href="index.html" class="btn btn-ghost" style="margin-top:20px;width:100%;justify-content:center;">
+            ← Back to Explore
+          </a>
+        </div>
+      </div>
+
+      <!-- ── UPLOAD FORM ── -->
+      <div id="upload-wrap" style="display:none;">
+
+        <!-- Monthly usage tracker -->
+        <div class="usage-card card">
+          <div class="usage-row">
+            <div>
+              <p class="usage-label">Monthly Uploads</p>
+              <p class="usage-sub">Resets on the 1st of every month</p>
+            </div>
+            <span class="usage-count" id="usage-count">0 / 5</span>
+          </div>
+          <div class="progress-wrap" style="margin-top:12px;">
+            <div class="progress-fill" id="usage-bar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Form card -->
+        <form id="upload-form" class="card upload-form" novalidate>
+
+          <!-- PDF Title -->
+          <div class="input-group">
+            <label class="input-label" for="pdf-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M20 13V10.6569C20 9.83935 20 9.4306 19.8478 9.06306C19.6955 8.69552 19.4065 8.40649 18.8284 7.82843L14.0919 3.09188C13.593 2.593 13.3436 2.34355 13.0345 2.19575C12.9702 2.165 12.9044 2.13772 12.8372 2.11401C12.5141 2 12.1614 2 11.4558 2C8.21082 2 6.58831 2 5.48933 2.88607C5.26731 3.06508 5.06508 3.26731 4.88607 3.48933C4 4.58831 4 6.21082 4 9.45584V13M13 2.5V3C13 5.82843 13 7.24264 13.8787 8.12132C14.7574 9 16.1716 9 19 9H19.5" /> <path d="M19.75 16H17.25C16.6977 16 16.25 16.4477 16.25 17V19M16.25 19V22M16.25 19H19.25M4.25 22V19.5M4.25 19.5V16H6C6.9665 16 7.75 16.7835 7.75 17.75C7.75 18.7165 6.9665 19.5 6 19.5H4.25ZM10.25 16H11.75C12.8546 16 13.75 16.8954 13.75 18V20C13.75 21.1046 12.8546 22 11.75 22H10.25V16Z" /> </svg> PDF Title *</label>
+            <input
+              class="input" type="text" id="pdf-title"
+              placeholder="e.g. PHY 101 Past Questions 2019–2023"
+              maxlength="120" required
+            />
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span class="field-error" id="title-error"></span>
+              <span class="char-count" id="title-count">0 / 120</span>
+            </div>
+          </div>
+
+          <!-- University -->
+          <div class="input-group">
+            <label class="input-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M2 22H21.5" /> <path d="M3 13V22M21 13V22" /> <path d="M7.5 8V22M16.5 8V22" /> <path d="M2 13H7M22 13H17" /> <path d="M6.5 8H17.5" /> <path d="M12 8V4.98221M12 4.98221V2.97035C12 2.49615 12 2.25905 12.1464 2.11173C12.6061 1.64939 14.5 2.74303 15.2203 3.18653C15.8285 3.56105 16 4.30914 16 4.98221H12Z" /> <path d="M12 22L12 20" /> <path d="M10.5 12L10.5 12.5M13.5 12V12.5" /> <path d="M10.5 16L10.5 16.5M13.5 16V16.5" /> </svg> University *</label>
+            <div class="uni-dropdown-wrap">
+              <input
+                class="input" type="text" id="uni-search"
+                placeholder="Search your university..."
+                autocomplete="off"
+              />
+              <div class="uni-dropdown" id="uni-dropdown"></div>
+              <input type="hidden" id="uni-id" />
+            </div>
+            <span class="field-error" id="uni-error"></span>
+          </div>
+
+          <!-- Course Code (optional) -->
+          <div class="input-group">
+            <label class="input-label" for="course-code">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M3 21L8 16" /> <path d="M13.2585 18.8714C9.51516 18.0215 5.97844 14.4848 5.12853 10.7415C4.99399 10.1489 4.92672 9.85266 5.12161 9.37197C5.3165 8.89129 5.55457 8.74255 6.03071 8.44509C7.10705 7.77265 8.27254 7.55888 9.48209 7.66586C11.1793 7.81598 12.0279 7.89104 12.4512 7.67048C12.8746 7.44991 13.1622 6.93417 13.7376 5.90269L14.4664 4.59604C14.9465 3.73528 15.1866 3.3049 15.7513 3.10202C16.316 2.89913 16.6558 3.02199 17.3355 3.26771C18.9249 3.84236 20.1576 5.07505 20.7323 6.66449C20.978 7.34417 21.1009 7.68401 20.898 8.2487C20.6951 8.8134 20.2647 9.05346 19.4039 9.53358L18.0672 10.2792C17.0376 10.8534 16.5229 11.1406 16.3024 11.568C16.0819 11.9955 16.162 12.8256 16.3221 14.4859C16.4399 15.7068 16.2369 16.88 15.5555 17.9697C15.2577 18.4458 15.1088 18.6839 14.6283 18.8786C14.1477 19.0733 13.8513 19.006 13.2585 18.8714Z" /> </svg> Course Code
+              <span class="optional-tag">optional</span>
+            </label>
+            <input
+              class="input" type="text" id="course-code"
+              placeholder="e.g. PHY 101, MTH 201, CSC 301"
+              maxlength="20"
+            />
+          </div>
+
+          <!-- Type -->
+          <div class="input-group">
+            <label class="input-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18.058 8.53645L17.058 7.92286C16.0553 7.30762 15.554 7 15 7C14.446 7 13.9447 7.30762 12.942 7.92286L11.942 8.53645C10.9935 9.11848 10.5192 9.40949 10.2596 9.87838C10 10.3473 10 10.9129 10 12.0442V17.9094C10 19.8377 10 20.8019 10.5858 21.4009C11.1716 22 12.1144 22 14 22H16C17.8856 22 18.8284 22 19.4142 21.4009C20 20.8019 20 19.8377 20 17.9094V12.0442C20 10.9129 20 10.3473 19.7404 9.87838C19.4808 9.40949 19.0065 9.11848 18.058 8.53645Z" />
+    <path d="M14 7.10809C13.3612 6.4951 12.9791 6.17285 12.4974 6.05178C11.9374 5.91102 11.3491 6.06888 10.1725 6.3846L8.99908 6.69947C7.88602 6.99814 7.32949 7.14748 6.94287 7.5163C6.55624 7.88513 6.40642 8.40961 6.10679 9.45857L4.55327 14.8971C4.0425 16.6852 3.78712 17.5792 4.22063 18.2836C4.59336 18.8892 6.0835 19.6339 7.5 20" />
+    <path d="M14.4947 10C15.336 9.44058 16.0828 8.54291 16.5468 7.42653C17.5048 5.12162 16.8944 2.75724 15.1836 2.14554C13.4727 1.53383 11.3091 2.90644 10.3512 5.21135C10.191 5.59667 10.0747 5.98366 10 6.36383" />
+</svg> Type *</label>
+            <div class="type-toggle">
+              <button type="button" class="type-btn active" data-type="Material">
+                <span class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M3 9H18C18.9319 9 19.3978 9 19.7654 9.15224C20.2554 9.35523 20.6448 9.74458 20.8478 10.2346C21 10.6022 21 11.0681 21 12C21 12.9319 21 13.3978 20.8478 13.7654C20.6448 14.2554 20.2554 14.6448 19.7654 14.8478C19.3978 15 18.9319 15 18 15H13" /> <path d="M6 15H3" /> <path d="M13 15H15C15.9319 15 16.3978 15 16.7654 15.1522C17.2554 15.3552 17.6448 15.7446 17.8478 16.2346C18 16.6022 18 17.0681 18 18C18 18.9319 18 19.3978 17.8478 19.7654C17.6448 20.2554 17.2554 20.6448 16.7654 20.8478C16.3978 21 15.9319 21 15 21H3" /> <path d="M3 3H14C14.9319 3 15.3978 3 15.7654 3.15224C16.2554 3.35523 16.6448 3.74458 16.8478 4.23463C17 4.60218 17 5.06812 17 6C17 6.93188 17 7.39782 16.8478 7.76537C16.6448 8.25542 16.2554 8.64477 15.7654 8.84776C15.3978 9 14.9319 9 14 9H3" /> <path d="M13 9L13 15.1905C13 16.3045 13 16.8616 12.6735 16.9803C12.3469 17.0991 11.9782 16.6761 11.2407 15.8303L10.7593 15.278C10.4064 14.8733 10.23 14.6709 10 14.6709C9.77003 14.6709 9.5936 14.8733 9.24074 15.278L8.75926 15.8303C8.02179 16.6761 7.65305 17.0991 7.32653 16.9803C7 16.8616 7 16.3045 7 15.1905L7 9" /> </svg></span>
+                <span class="type-name">Material</span>
+                <span class="type-desc">Lecture notes, textbooks, guides</span>
+              </button>
+              <button type="button" class="type-btn" data-type="Past Question">
+                <span class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19.7502 11V10C19.7502 6.22876 19.7502 4.34315 18.5786 3.17157C17.407 2 15.5214 2 11.7502 2H10.7503C6.97907 2 5.09347 2 3.9219 3.17156C2.75033 4.34312 2.75031 6.22872 2.75028 9.99993L2.75024 14C2.75021 17.7712 2.7502 19.6568 3.92173 20.8284C5.0933 21.9999 6.97898 22 10.7502 22" />
+    <path d="M7.25024 7H15.2502M7.25024 12H15.2502" />
+    <path d="M13.2502 20.8268V22H14.4236C14.833 22 15.0377 22 15.2217 21.9238C15.4058 21.8475 15.5505 21.7028 15.84 21.4134L20.6636 16.5894C20.9366 16.3164 21.0731 16.1799 21.1461 16.0327C21.285 15.7525 21.285 15.4236 21.1461 15.1434C21.0731 14.9961 20.9366 14.8596 20.6636 14.5866C20.3905 14.3136 20.254 14.1771 20.1067 14.1041C19.8265 13.9653 19.4975 13.9653 19.2173 14.1041C19.0701 14.1771 18.9335 14.3136 18.6605 14.5866L18.6605 14.5866L13.8369 19.4106C13.5475 19.7 13.4027 19.8447 13.3265 20.0287C13.2502 20.2128 13.2502 20.4174 13.2502 20.8268Z" />
+</svg></span>
+                <span class="type-name">Past Question</span>
+                <span class="type-desc">Exam questions, test papers</span>
+              </button>
+            </div>
+            <input type="hidden" id="pdf-type" value="Material" />
+          </div>
+
+          <!-- File Upload -->
+          <div class="input-group">
+            <label class="input-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M16.9503 8.3183C17.198 7.68602 16.5075 6.92738 15.1266 5.41011C13.6701 3.80984 12.92 3.00959 11.9999 3C11.0798 3.00959 10.3297 3.80984 8.8732 5.41011C7.49228 6.92738 6.80182 7.68602 7.04953 8.3183C7.05858 8.34138 7.0684 8.36414 7.07899 8.38653C7.34917 8.95795 8.24467 8.99712 9.99989 8.9998V15.5C9.99989 15.965 9.99989 16.1975 10.051 16.3882C10.1897 16.9059 10.594 17.3102 11.1117 17.4489C11.3024 17.5 11.5349 17.5 11.9999 17.5C12.4648 17.5 12.6973 17.5 12.8881 17.4489C13.4057 17.3102 13.81 16.9059 13.9487 16.3882C13.9999 16.1975 13.9999 15.965 13.9999 15.5V8.9998C15.7551 8.99712 16.6506 8.95796 16.9208 8.38653C16.9314 8.36414 16.9412 8.34138 16.9503 8.3183Z" /> <path d="M4.99998 21H19" /> </svg> PDF File * <span class="optional-tag">Max 20MB</span></label>
+            <div class="drop-zone" id="drop-zone">
+              <input
+                type="file" id="file-input"
+                accept=".pdf,application/pdf"
+                style="display:none;"
+              />
+              <div id="drop-idle" class="drop-idle">
+                <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="72" height="72" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <path d="M10 13.229C10.1416 13.4609 10.3097 13.6804 10.5042 13.8828C11.7117 15.1395 13.5522 15.336 14.9576 14.4722C15.218 14.3121 15.4634 14.1157 15.6872 13.8828L18.9266 10.5114C20.3578 9.02184 20.3578 6.60676 18.9266 5.11718C17.4953 3.6276 15.1748 3.62761 13.7435 5.11718L13.03 5.85978" />
+    <path d="M10.9703 18.14L10.2565 18.8828C8.82526 20.3724 6.50471 20.3724 5.07345 18.8828C3.64218 17.3932 3.64218 14.9782 5.07345 13.4886L8.31287 10.1172C9.74413 8.62761 12.0647 8.6276 13.4959 10.1172C13.6904 10.3195 13.8584 10.539 14 10.7708" />
+</svg></div>
+                <p class="drop-title">Drag & drop your PDF here</p>
+                <p class="drop-sub">or <button type="button" id="browse-btn" class="browse-link">browse files</button></p>
+                <p class="drop-hint">PDF only · Max 20MB</p>
+              </div>
+              <div id="drop-ready" class="drop-ready" style="display:none;">
+                <div class="file-preview">
+                  <div class="file-icon">📄</div>
+                  <div class="file-info">
+                    <p class="file-name" id="file-name"></p>
+                    <p class="file-size" id="file-size"></p>
+                  </div>
+                  <button type="button" id="remove-file" class="remove-file">✕</button>
+                </div>
+                <!-- Upload progress bar -->
+                <div id="upload-progress-wrap" style="display:none;margin-top:12px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:var(--text-muted);">
+                    <span>Uploading...</span>
+                    <span id="upload-pct">0%</span>
+                  </div>
+                  <div class="progress-wrap">
+                    <div class="progress-fill" id="upload-progress-bar" style="width:0%;transition:width 0.3s;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class="field-error" id="file-error"></span>
+          </div>
+
+          <!-- Error banner -->
+          <div class="alert alert-error" id="form-error" style="display:none;"></div>
+
+          <!-- Submit -->
+          <button style="display:flex; align-items:center; gap: 3px;" class="btn btn-primary btn-full btn-lg" type="submit" id="submit-btn">
+            <span style="display:flex; align-items:center; gap: 3px;" id="btn-text"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M16.9503 8.3183C17.198 7.68602 16.5075 6.92738 15.1266 5.41011C13.6701 3.80984 12.92 3.00959 11.9999 3C11.0798 3.00959 10.3297 3.80984 8.8732 5.41011C7.49228 6.92738 6.80182 7.68602 7.04953 8.3183C7.05858 8.34138 7.0684 8.36414 7.07899 8.38653C7.34917 8.95795 8.24467 8.99712 9.99989 8.9998V15.5C9.99989 15.965 9.99989 16.1975 10.051 16.3882C10.1897 16.9059 10.594 17.3102 11.1117 17.4489C11.3024 17.5 11.5349 17.5 11.9999 17.5C12.4648 17.5 12.6973 17.5 12.8881 17.4489C13.4057 17.3102 13.81 16.9059 13.9487 16.3882C13.9999 16.1975 13.9999 15.965 13.9999 15.5V8.9998C15.7551 8.99712 16.6506 8.95796 16.9208 8.38653C16.9314 8.36414 16.9412 8.34138 16.9503 8.3183Z" /> <path d="M4.99998 21H19" /> </svg> Upload PDF</span>
+            <span id="btn-spinner" class="btn-spinner" style="display:none;"></span>
+          </button>
+
+          <p class="upload-terms">
+            By uploading, you confirm this file doesn't violate any copyright or academic policy.
+            Inappropriate uploads will be removed and your account may be suspended.
+          </p>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer"></footer>
+
+  <script type="module">
+    import { supabase }                          from './js/supabase.js'
+    import { buildNav, buildFooter, toast,
+             buildUniDropdown }                  from './js/ui.js'
+    import { requireAuth, canUpload, isAdmin }   from './js/auth.js'
+
+    // ── State ────────────────────────────────────
+    let session     = null
+    let profile     = null
+    let selectedFile = null
+    let selectedType = 'Material'
+
+    // ── Init ─────────────────────────────────────
+    async function init() {
+      // requireAuth redirects to login if not logged in
+      session = await requireAuth()
+      if (!session) return
+
+      await buildNav('upload')
+      buildFooter()
+
+      // Load profile
+      const { data } = await supabase
+        .from('profiles')
+        .select('*, universities(name, short_name)')
+        .eq('id', session.user.id)
+        .single()
+
+      profile = data
+
+      // Check if admin — admins bypass the 10-view rule
+      const admin = await isAdmin(session.user.id)
+
+      // Check views (skipped for admins)
+      let views = 0
+      if (!admin) {
+        const { count: viewCount } = await supabase
+          .from('download_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id)
+          .eq('action', 'view')
+        views = viewCount || 0
+      }
+
+      // Check upload limit
+      const uploadOk = await canUpload(profile)
+
+      if (!admin && views < 5) {
+        // Show access gate
+        document.getElementById('access-gate').style.display = 'block'
+        document.getElementById('gate-count').textContent = `${views} / 5`
+        document.getElementById('gate-bar').style.width   = `${(views / 5) * 100}%`
+        return
+      }
+
+      if (!uploadOk) {
+        document.getElementById('limit-gate').style.display = 'block'
+        return
+      }
+
+      // All good — show form
+      showForm()
+    }
+
+    // ── Show Form ────────────────────────────────
+    function showForm() {
+      document.getElementById('upload-wrap').style.display = 'block'
+
+      // Usage bar
+      const used = profile.upload_count_this_month || 0
+      document.getElementById('usage-count').textContent = `${used} / 10`
+      document.getElementById('usage-bar').style.width   = `${(used / 10) * 100}%`
+      if (used >= 8) {
+        document.getElementById('usage-bar').classList.add('danger')
+      }
+
+      // Pre-fill university from profile
+      if (profile.universities) {
+        const uniInput = document.getElementById('uni-search')
+        uniInput.value = `${profile.universities.name} (${profile.universities.short_name})`
+        document.getElementById('uni-id').value = profile.university_id
+      }
+
+      buildUniDropdown('uni-search', 'uni-dropdown', 'uni-id')
+      bindTypeToggle()
+      bindFileUpload()
+      bindCharCount()
+      bindFormSubmit()
+    }
+
+    // ── Type Toggle ──────────────────────────────
+    function bindTypeToggle() {
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'))
+          btn.classList.add('active')
+          selectedType = btn.dataset.type
+          document.getElementById('pdf-type').value = selectedType
+        })
+      })
+    }
+
+    // ── File Upload (drag & drop + browse) ───────
+    function bindFileUpload() {
+      const dropZone  = document.getElementById('drop-zone')
+      const fileInput = document.getElementById('file-input')
+      const browseBtn = document.getElementById('browse-btn')
+      const removeBtn = document.getElementById('remove-file')
+
+      browseBtn.addEventListener('click', () => fileInput.click())
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) handleFile(fileInput.files[0])
+      })
+
+      // Drag & drop
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        dropZone.classList.add('dragover')
+      })
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover')
+      })
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault()
+        dropZone.classList.remove('dragover')
+        const file = e.dataTransfer.files[0]
+        if (file) handleFile(file)
+      })
+
+      removeBtn.addEventListener('click', () => {
+        selectedFile = null
+        fileInput.value = ''
+        document.getElementById('drop-idle').style.display  = 'block'
+        document.getElementById('drop-ready').style.display = 'none'
+        document.getElementById('file-error').textContent   = ''
+      })
+    }
+
+    function handleFile(file) {
+      const fileError = document.getElementById('file-error')
+
+      // Validate type
+      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+        fileError.textContent = '❌ Only PDF files are allowed'
+        return
+      }
+
+      // Validate size (20MB)
+      const maxSize = 20 * 1024 * 1024
+      if (file.size > maxSize) {
+        fileError.textContent = `❌ File too large (${(file.size/1024/1024).toFixed(1)}MB). Max is 20MB`
+        return
+      }
+
+      fileError.textContent = ''
+      selectedFile = file
+
+      // Show file preview
+      document.getElementById('drop-idle').style.display  = 'none'
+      document.getElementById('drop-ready').style.display = 'block'
+      document.getElementById('file-name').textContent    = file.name
+      document.getElementById('file-size').textContent    = `${(file.size / 1024 / 1024).toFixed(2)} MB`
+    }
+
+    // ── Char Count ───────────────────────────────
+    function bindCharCount() {
+      const titleInput = document.getElementById('pdf-title')
+      const countEl   = document.getElementById('title-count')
+      titleInput.addEventListener('input', () => {
+        const len = titleInput.value.length
+        countEl.textContent = `${len} / 120`
+        countEl.style.color = len > 100 ? 'var(--orange)' : 'var(--text-dim)'
+      })
+    }
+
+    // ── Form Submit ──────────────────────────────
+    function bindFormSubmit() {
+      document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault()
+
+        const title      = document.getElementById('pdf-title').value.trim()
+        const uniId      = document.getElementById('uni-id').value
+        const courseCode = document.getElementById('course-code').value.trim()
+        const type       = document.getElementById('pdf-type').value
+
+        // Clear errors
+        document.getElementById('title-error').textContent = ''
+        document.getElementById('uni-error').textContent   = ''
+        document.getElementById('file-error').textContent  = ''
+        document.getElementById('form-error').style.display = 'none'
+
+        // Validate
+        let valid = true
+        if (!title) {
+          document.getElementById('title-error').textContent = 'PDF title is required'
+          valid = false
+        }
+        if (!uniId) {
+          document.getElementById('uni-error').textContent = 'Please select a university'
+          valid = false
+        }
+        if (!selectedFile) {
+          document.getElementById('file-error').textContent = 'Please select a PDF file'
+          valid = false
+        }
+        if (!valid) return
+
+        // Loading state
+        setLoading(true)
+
+        try {
+          // 1. Build unique file path
+          const ext      = '.pdf'
+          const safeName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+          const filePath = `${session.user.id}/${Date.now()}_${safeName}${ext}`
+
+          // 2. Show upload progress UI
+          document.getElementById('upload-progress-wrap').style.display = 'block'
+
+          // 3. Upload file to Supabase Storage
+          const { error: storageError } = await supabase.storage
+            .from('pdfs')
+            .upload(filePath, selectedFile, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: 'application/pdf',
+            })
+
+          if (storageError) throw storageError
+
+          // Simulate progress fill after upload
+          document.getElementById('upload-progress-bar').style.width = '100%'
+          document.getElementById('upload-pct').textContent = '100%'
+
+          // 4. Insert PDF record into DB
+          const fullTitle = courseCode ? `${courseCode} — ${title}` : title
+
+          const { error: dbError } = await supabase
+            .from('pdfs')
+            .insert({
+              title:          fullTitle,
+              university_id:  uniId,
+              uploader_id:    session.user.id,
+              type:           type,
+              file_url:       filePath,
+              file_size_mb:   parseFloat((selectedFile.size / 1024 / 1024).toFixed(2)),
+              is_approved:    true,
+            })
+
+          if (dbError) throw dbError
+
+          // 5. Increment monthly upload count
+          await supabase
+            .from('profiles')
+            .update({ upload_count_this_month: (profile.upload_count_this_month || 0) + 1 })
+            .eq('id', session.user.id)
+
+          // 6. Success!
+          toast('PDF uploaded successfully! 🎉', 'success')
+          setTimeout(() => window.location.href = 'index.html', 1500)
+
+        } catch (err) {
+          console.error(err)
+          const errEl = document.getElementById('form-error')
+          errEl.style.display = 'block'
+          errEl.textContent = `Upload failed: ${err.message || 'Please try again.'}`
+          setLoading(false)
+          document.getElementById('upload-progress-wrap').style.display = 'none'
+        }
+      })
+    }
+
+    // ── Loading State ────────────────────────────
+    function setLoading(loading) {
+      const btn     = document.getElementById('submit-btn')
+      const btnText = document.getElementById('btn-text')
+      const spinner = document.getElementById('btn-spinner')
+      btn.disabled            = loading
+      btnText.style.display   = loading ? 'none'         : 'inline'
+      spinner.style.display   = loading ? 'inline-block' : 'none'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
